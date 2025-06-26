@@ -24,7 +24,7 @@ Notification via SNS/Slack/Email – For build or deploy events.
 
 
 
-📦 2. Containerization & Orchestration
+<h1>📦 2. Containerization & Orchestration</h1>
 Amazon EKS (Kubernetes) – Deploy microservices in a scalable, production-grade cluster.
 
 
@@ -41,7 +41,7 @@ ECR (Elastic Container Registry) – Store and manage Docker images.
 
 
 
-🏗️ 3. Infrastructure as Code (IaC)
+<h1>🏗️ 3. Infrastructure as Code (IaC)</h1>
 AWS CloudFormation – Define infrastructure as YAML/JSON templates.
 
 
@@ -52,7 +52,7 @@ AWS CDK (Cloud Development Kit) – Define cloud resources using familiar progra
 
 
 
-📡 4. Monitoring & Logging
+<h1>📡 4. Monitoring & Logging</h1>
 CloudWatch – Collect logs, metrics, and set alarms.
 
 
@@ -66,7 +66,7 @@ X-Ray – Distributed tracing for debugging microservices.
 
 
 
-🔐 5. Security & IAM
+<h1>🔐 5. Security & IAM</h1>
 IAM – Manage users, roles, and policies.
 
 
@@ -80,7 +80,7 @@ Config – Track configuration changes for compliance.
 
 
 
-🌐 6. Networking & Load Balancing
+<h1>🌐 6. Networking & Load Balancing</h1>
 VPC – Set up private networks, subnets, route tables, and gateways.
 
 
@@ -94,7 +94,7 @@ API Gateway – Expose backend services securely.
 
 
 
-🧪 7. Environment Management
+<h1>🧪 7. Environment Management</h1>
 EC2 – Set up dev/test/staging/production environments.
 
 
@@ -108,7 +108,7 @@ Launch Templates/Configurations – Consistent EC2 provisioning.
 
 
 
-📁 8. Backup & Disaster Recovery
+<h1>📁 8. Backup & Disaster Recovery</h1>
 S3 – Store backups and artifacts.
 
 
@@ -122,7 +122,7 @@ Cross-region replication – For DR and high availability.
 
 
 
-💬 9. Collaboration & Automation
+<h1>💬 9. Collaboration & Automation</h1>
 AWS Systems Manager (SSM) – Run remote commands on instances.
 
 
