@@ -3,7 +3,7 @@
 Elastic Kubernetes Service is a managed Kubernetes service provided by AWS. It handles the Kubernetes control plane (also known as the master nodes) for you.
 EKS can be considered the managed Kubernetes control plane / master node.
 
-<h4>✅ What EKS Manages (Control Plane): </h4>
+<h4><u>✅ What EKS Manages (Control Plane): </u></h4>
 When you create an EKS cluster, AWS provisions and manages the following control plane components:
 
 API Server
