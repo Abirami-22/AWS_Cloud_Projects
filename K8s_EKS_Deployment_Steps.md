@@ -6,15 +6,15 @@ EKS can be considered the managed Kubernetes control plane / master node.
 <h3>✅ What EKS Manages (Control Plane): </h3>
 When you create an EKS cluster, AWS provisions and manages the following control plane components:
 
-API Server
+1. API Server
 
-etcd (key-value store)
+2. etcd (key-value store)
 
-Controller Manager
+3. Controller Manager
 
-Scheduler
+4. Scheduler
 
-Cloud Integration for IAM, VPC, etc.
+5. Cloud Integration for IAM, VPC, etc.
 
 You don’t manage or access the control plane servers directly — AWS handles high availability, security patches, and scaling of these components.
 
@@ -22,8 +22,8 @@ You don’t manage or access the control plane servers directly — AWS handles 
 
 You (the user) manage:
 
-Worker nodes (EC2, Fargate, or other compute backends)
+1. Worker nodes (EC2, Fargate, or other compute backends)
 
-Kubernetes workloads (pods, deployments, services, etc.)
+2. Kubernetes workloads (pods, deployments, services, etc.)
 
-Networking and storage configurations
+3. Networking and storage configurations
