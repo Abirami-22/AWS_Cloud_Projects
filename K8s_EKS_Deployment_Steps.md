@@ -50,42 +50,36 @@ Now we will set up an EKS Kubernetes cluster to host the application. This inclu
 kind: ClusterConfig
 
 metadata:
-  name: demo-cluster-three-tier-1
-  region: us-east-1
-  version: "1.29"   # Specify Kubernetes version
+  name: demo-cluster-three-tier-1         # Cluster name
+  region: us-east-1                       # AWS region
+  version: "1.29"                         # Kubernetes version (adjust as needed)
 
 vpc:
-  cidr: "10.0.0.0/16"
+  cidr: "10.0.0.0/16"                     # Custom VPC CIDR
+  nat:
+    gateway: Single                       # Use a single NAT Gateway
   subnets:
     public:
       us-east-1a: { cidr: "10.0.1.0/24" }
       us-east-1b: { cidr: "10.0.2.0/24" }
+    private:
+      us-east-1a: { cidr: "10.0.3.0/24" }
+      us-east-1b: { cidr: "10.0.4.0/24" }
 
 nodeGroups:
-  - name: general-workers
-    instanceType: t3.medium
-    desiredCapacity: 2
-    minSize: 1
-    maxSize: 3
-    volumeSize: 20
+  - name: general-workers                 # Node group name
+    instanceType: t3.medium               # EC2 instance type
+    desiredCapacity: 2                   # Start with 2 EC2 nodes
+    minSize: 2
+    maxSize: 4
+    volumeSize: 20                       # EBS volume size (in GB)
     ssh:
       allow: true
-      publicKeyName: your-key-pair-name  # Replace with your actual EC2 key pair name
+      publicKeyName: my-ec2-keypair      # Replace with your EC2 key pair name
     iam:
       withAddonPolicies:
-        autoScaler: true
-        cloudWatch: true
-        ebs: true
-        albIngress: true
+        autoScaler: true                 # Optional: for cluster auto-scaler
+        ebs: true                        # Optional: if using EBS volumes
     tags:
-      node-type: "general"
-      env: "dev"
-## Java Example
-
-```java
-public class Hello {
-    public static void main(String[] args) {
-        System.out.println("Hello!");
-    }
-}
-
+      Name: demo-node                    # Will be applied as EC2 Name tag
+      environment: dev
