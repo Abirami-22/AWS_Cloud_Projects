@@ -182,8 +182,39 @@ This command configures the IAM OIDC provider for your EKS cluster. With OIDC in
 
 <h1>3. Install the AWS Load Balancer Controller (ALB Ingress Controller)</h1>
 
+**Why we need ALB Ingress Controller**
+
+The AWS ALB Ingress Controller (now called AWS Load Balancer Controller) is used in Kubernetes on AWS to automatically provision and manage Application Load Balancers (ALBs) in response to Kubernetes Ingress or Service resources.
+
 To expose the microservices to the internet, we’ll use an Application Load Balancer (ALB) Ingress Controller for AWS EKS. This controller will watch Ingress resources in the cluster and create/manage an AWS ALB accordingly, allowing external traffic to reach our services. The ALB controller needs specific IAM permissions and will run as a deployment in our cluster. We’ll set it up step by step:
 
 a. Create IAM Policy for ALB Controller: AWS provides a pre-defined IAM policy JSON for the ALB controller. Download this policy document and create an IAM policy from it:
+
+```
+curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.11.0/docs/install/iam_policy.json
+aws iam create-policy --policy-name AWSLoadBalancerControllerIAMPolicy --policy-document file://iam_policy.json
+```
+
+The first command fetches the IAM permissions policy for the AWS Load Balancer Controller, and the second command creates a new IAM policy called AWSLoadBalancerControllerIAMPolicy in your AWS account using that document.
+
+b. Create an IAM Role for the ALB Controller: Next, we create an IAM role and Kubernetes service account for the ALB controller to use. We can do this in one step with eksctl, which will create an IAM role and associate it with a K8s service account named aws-load-balancer-controller in the kube-system namespace:
+
+```
+eksctl create iamserviceaccount --cluster=$cluster_name --namespace=kube-system --name=aws-load-balancer-controller \
+  --role-name "AmazonEKSLoadBalancerControllerRole" \
+  --attach-policy-arn=arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:policy/AWSLoadBalancerControllerIAMPolicy \
+  --approve
+```
+Replace <YOUR_AWS_ACCOUNT_ID> with your AWS account number. This command creates an IAM role AmazonEKSLoadBalancerControllerRole with the policy we made, and links it to the aws-load-balancer-controller service account in the cluster. The --approve flag automatically applies the changes. Essentially, this grants the ALB Ingress Controller pod the necessary AWS permissions (via IAM) to create and manage load balancers, security groups, etc., on our behalf.
+
+c. Deploy the ALB Controller via Helm: Now we deploy the controller into the cluster using Helm. First, add the AWS EKS Helm charts repository and update it, so we have access to the ALB controller chart:
+
+``
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+``
+
+
+
 
 
