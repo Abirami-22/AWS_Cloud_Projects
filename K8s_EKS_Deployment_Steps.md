@@ -209,12 +209,30 @@ Replace <YOUR_AWS_ACCOUNT_ID> with your AWS account number. This command creates
 
 c. Deploy the ALB Controller via Helm: Now we deploy the controller into the cluster using Helm. First, add the AWS EKS Helm charts repository and update it, so we have access to the ALB controller chart:
 
-``
+```
+
 helm repo add eks https://aws.github.io/eks-charts
 helm repo update
-``
 
+```
+Next, install the AWS Load Balancer Controller chart from that repo:
 
+```
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system \
+  --set clusterName=$cluster_name \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --set region=us-east-1 \
+  --set vpcId=<YOUR_VPC_ID>
+```
 
+In the above command, make sure to replace <YOUR_VPC_ID> with the ID of the VPC where your EKS cluster is running (if you used eksctl without special configuration, you can find the VPC ID via aws eks describe-cluster --name $cluster_name --query "cluster.resourcesVpcConfig.vpcId"). We also specify the cluster’s name and region. We set serviceAccount.create=false and serviceAccount.name=aws-load-balancer-controller because we have already created the service account with an IAM role in the previous step. The Helm chart will then use that existing service account.
 
+This Helm installation will create a deployment called aws-load-balancer-controller in the kube-system namespace. After a minute, verify that the controller pod is running:
+
+```
+kubectl get deployment -n kube-system aws-load-balancer-controller
+
+```
+You should see the deployment with at least 1/1 pod available, indicating the ALB Ingress Controller is up. At this point, the cluster is ready to create AWS Load Balancers whenever we define an Ingress resource.
 
