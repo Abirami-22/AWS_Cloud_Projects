@@ -1,4 +1,4 @@
-<h1>Amazon EKS</h1>
+<H1>Amazon EKS</H1>
 
 Elastic Kubernetes Service is a managed Kubernetes service provided by AWS. It handles the Kubernetes control plane (also known as the master nodes) for you.
 EKS can be considered the managed Kubernetes control plane / master node.
