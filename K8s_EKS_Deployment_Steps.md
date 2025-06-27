@@ -236,3 +236,104 @@ kubectl get deployment -n kube-system aws-load-balancer-controller
 ```
 You should see the deployment with at least 1/1 pod available, indicating the ALB Ingress Controller is up. At this point, the cluster is ready to create AWS Load Balancers whenever we define an Ingress resource.
 
+<h1>4. Enable the EBS CSI Driver (Persistent Storage)</h1>
+Our application includes stateful services (MongoDB, MySQL, Redis), which require persistent storage in Kubernetes. AWS EKS supports the EBS CSI Driver to provision Amazon EBS volumes for Kubernetes PersistentVolumeClaims. We need to install this driver (as an EKS add-on) so that our database pods can have durable storage. Before installing, we must create an IAM role for the CSI driver.
+
+a. Create IAM Role for EBS CSI: We will create an IAM role that grants permissions for EBS volume operations, and associate it with the EBS CSI driver’s service account:
+
+```
+eksctl create iamserviceaccount --name ebs-csi-controller-sa --namespace kube-system --cluster $cluster_name \
+  --role-name "AmazonEKS_EBS_CSI_DriverRole" --role-only \
+  --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+  --approve
+```
+This command creates an IAM role named AmazonEKS_EBS_CSI_DriverRole with the Amazon-managed policy AmazonEBSCSIDriverPolicy attached (which allows Kubernetes to manage EBS volumes). We used --role-only because EKS Add-ons will create the service account for us; we just need the role ready.
+
+b. Install the EBS CSI Driver Add-on: Now enable the EBS CSI driver for your cluster:
+
+```
+eksctl create addon --name aws-ebs-csi-driver --cluster $cluster_name \
+  --service-account-role-arn arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/AmazonEKS_EBS_CSI_DriverRole --force
+```
+This command tells EKS to install the official aws-ebs-csi-driver add-on in the cluster, using the IAM role we just created for its service account. After a short time, the EBS CSI driver pods will be running in kube-system namespace (you can check with kubectl get pods -n kube-system -l app=ebs-csi-controller). Once this is complete, your cluster can dynamically provision EBS volumes for any PersistentVolumeClaims that our application’s StatefulSets might create. In summary, the cluster is now configured with everything needed: an OIDC provider, the ALB ingress controller, and the EBS CSI driver – fully ready to host our microservices application.
+
+<h1>5.Deploying the Microservices with Helm</h1>
+
+With the infrastructure in place, we can deploy the Robot Shop application onto the EKS cluster using Helm. The GitHub repository we cloned contains a pre-built Helm chart that defines all the Kubernetes objects (Deployments, Services, StatefulSets, etc.) for the 3-tier app. We will use that chart to install the whole stack in one go.
+
+**1. Clone the Repository (if not already done)**
+
+If you haven’t already, clone the project repository and navigate to the Helm chart directory:
+
+```
+git clone https://github.com/AbhishekTechie10/three-tier-architecture-demo.git
+cd three-tier-architecture-demo/EKS/helm
+```
+
+This repository contains the code and manifests for the Robot Shop application. In particular, the EKS/helm directory contains a Chart.yaml, templates, and an ingress.yaml file – everything needed to deploy on EKS with one Helm command. (If you already cloned the repo earlier for local testing, just navigate to EKS/helm.)
+
+Note: The Helm chart is configured to use pre-built Docker images for all services (hosted on Docker Hub), so you do not need to build or push any images manually. The default values should work out-of-the-box for a demo deployment.
+
+**2. Install the Helm Chart on EKS**
+We’ll deploy all components into a dedicated Kubernetes namespace (for cleanliness). Create the namespace and install the Helm release:
+
+```
+kubectl create namespace robot-shop
+helm install robot-shop . -n robot-shop
+```
+
+This tells Helm to install the chart in the current directory (.) into the robot-shop namespace, with the release name robot-shop. Helm will then create all the necessary objects: deployments for each microservice, stateful sets for database components, services for internal communication, etc. After running the above commands, Helm’s output should indicate it created a number of Kubernetes resources. Indeed, this single step provisions “all the services, deployments, and configurations necessary for the Robot Shop application to run inside your EKS cluster.”
+
+Give it a minute to let Kubernetes pull the container images and start up all the pods. You can run the following to check the status of the pods:
+
+```
+kubectl get pods -n robot-shop
+```
+
+All pods should eventually show as Running (or Completed for any one-time jobs). If any pods are in CrashLoopBackOff, you may need to check logs, but in a normal scenario they should start correctly since we’re using known-good images.
+
+**3. Configure Ingress and Load Balancer (Expose the Application)**
+At this point, the application is running internally in the cluster, but we need to make it accessible from the outside. To do that, we’ll create a Kubernetes Ingress resource which the AWS ALB Controller will pick up and create an external Application Load Balancer for. The Helm chart directory provides an ingress.yaml file with the necessary Ingress configuration (it likely defines path routing to the web service, which is the frontend).
+
+Apply the ingress manifest:
+
+```
+kubectl apply -f ingress.yaml
+```
+
+This creates an Ingress resource (in the robot-shop namespace) that maps incoming HTTP requests to the web service of our application. The AWS Load Balancer Controller we installed will notice this and immediately start provisioning an ALB to satisfy the Ingress. Within a few minutes, a new ALB will be created in your AWS account (you can check the EC2 > Load Balancers section in the AWS console to watch its progress). The Ingress controller will also create a corresponding Kubernetes Service of type LoadBalancer under the hood, but you primarily interact with the Ingress itself.
+
+It may take 5-10 minutes for the Application Load Balancer to be fully provisioned and in an “active” state. You can verify that the Ingress has been assigned an address by running:
+
+```
+kubectl get ingress -n robot-shop
+```
+
+Once the STATUS shows an address (which will be an AWS ALB DNS name), your application is available on that URL. For example, you might see an address like k8s-robotshop-ABCDEFGHI.us-east-1.elb.amazonaws.com. You can also get the ALB’s DNS by checking the AWS console.
+
+**4. Access the Application**
+When the ALB is ready, copy its DNS name and try opening it in your web browser (it will be serving on HTTP port 80 by default). You should see the Robot Shop storefront load in your browser, confirming that the frontend service is reachable. From there, you can navigate the site: create a user account, browse products, add items to your cart, and perform a checkout. These actions will trigger the various microservices (user, catalogue, cart, order, payment, etc.) to work together. If all went well, the order checkout will complete and you’ll get an order confirmation, indicating the full path through the three tiers is functioning.
+
+At this stage, you have successfully deployed the full microservices-based three-tier application on AWS EKS. The ALB is handling external traffic and routing through the Ingress to the web frontend, which in turn calls internal services. Kubernetes is managing the scaling and networking of all those components behind the scenes.
+
+Tip: You can also verify all Services are properly exposed by running kubectl get svc -n robot-shop. Most services are ClusterIP (internal only), but the ingress/ALB provides the external access point. If you described the Ingress (kubectl describe ingress -n robot-shop), you would see annotations that the ALB controller added (like AWS load balancer ARNs, etc.), and the rules mapping /* path to the web service.
+
+**5. (Optional) Clean Up Resources**
+If you are done experimenting, remember to delete the AWS resources to avoid ongoing charges. The easiest way is to delete the EKS cluster, which will also delete node instances and load balancers:
+
+```
+eksctl delete cluster --name demo-cluster-three-tier-1 --region us-east-1
+```
+
+This will tear down the entire cluster and associated resources (it may take a few minutes to complete). Ensure that the ALB, EC2 instances, and any EBS volumes created are removed. Double-check AWS console for any remaining pieces to delete manually if needed. Only do this clean-up step when you no longer need the cluster or application running.
+
+Optional: Load Testing and Monitoring
+After deployment, you might want to generate some traffic on the application or integrate monitoring to observe its behavior. Stan’s Robot Shop comes with a couple of additional components for these purposes.
+
+Load Generation: The repository includes a utility in the load-gen directory to simulate user traffic to the app. This load generator is a Python/Locust-based tool that can continuously hit the various endpoints of the Robot Shop (simulating users browsing and purchasing). It is not deployed by default. You can run it manually in a Docker container, or even deploy it into your EKS cluster as a Job/Deployment. (The repo provides an example Kubernetes descriptor for running the load generator in the K8s/ folder.) Using this, you can apply load to the system and test its resilience. For example, Locust can simulate multiple concurrent users adding items to carts and checking out.
+
+Application Monitoring & Metrics: The microservices are instrumented for observability. In fact, the application was originally built to showcase Instana APM, and each service has Instana tracing agents included (if you have an Instana instance and configure the agent key, you could see end-to-end distributed traces in Instana’s dashboard). For a more open-source approach, certain services also expose Prometheus metrics endpoints. Notably, the cart service and payment service have HTTP endpoints at /metrics which provide Prometheus-formatted metrics. These include counters such as the total number of items added to carts and purchased, and histograms of cart sizes and values. If you set up a Prometheus server (either in-cluster or via AWS Managed Prometheus) to scrape these endpoints, you can monitor the app’s performance and usage. You could then visualize the data with Grafana or CloudWatch. Additionally, you can monitor cluster-level metrics (pod CPU/memory, etc.) via CloudWatch Container Insights or Prometheus as well.
+
+By combining load generation and monitoring, you can observe how the system behaves under load – for example, watching the metrics for database usage or throughput as Locust drives traffic. This can be a great learning exercise in scaling and performance tuning for a microservices architecture.
+
+
