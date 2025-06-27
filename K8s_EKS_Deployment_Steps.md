@@ -42,3 +42,42 @@ Before we begin, ensure you have the following prerequisites in place:
 **Helm:** The package manager for Kubernetes, used to deploy the application’s Helm chart. Install Helm v3 on your system.
 
 **Docker (optional):** If you want to test locally or build images, Docker is useful. (For this deployment, you won’t need to build images manually because pre-built images are available on Docker Hub.)
+
+<h1>EKS Cluster Setup</h1>
+Now we will set up an EKS Kubernetes cluster to host the application. This includes creating the cluster itself and then configuring necessary add-ons such as IAM OIDC provider, the AWS Load Balancer Controller (for ingress), and the EBS CSI driver (for persistent storage). The following steps assume you’re operating in the us-east-1 region (North Virginia); you can change the region and names as needed.
+`
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: demo-cluster-three-tier-1
+  region: us-east-1
+  version: "1.29"   # Specify Kubernetes version
+
+vpc:
+  cidr: "10.0.0.0/16"
+  subnets:
+    public:
+      us-east-1a: { cidr: "10.0.1.0/24" }
+      us-east-1b: { cidr: "10.0.2.0/24" }
+
+nodeGroups:
+  - name: general-workers
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 1
+    maxSize: 3
+    volumeSize: 20
+    ssh:
+      allow: true
+      publicKeyName: your-key-pair-name  # Replace with your actual EC2 key pair name
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        cloudWatch: true
+        ebs: true
+        albIngress: true
+    tags:
+      node-type: "general"
+      env: "dev"`
+
