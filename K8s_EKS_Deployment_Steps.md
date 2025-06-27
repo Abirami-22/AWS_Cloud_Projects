@@ -83,3 +83,8 @@ nodeGroups:
     tags:
       Name: demo-node                    # Will be applied as EC2 Name tag
       environment: dev
+
+```
+Amazon EKS (Elastic Kubernetes Service) can be set up using either:
+
+
