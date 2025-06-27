@@ -124,6 +124,8 @@ nodeGroups:
       environment: dev
 
 ```
+
+<h3>2. Fargate Based EKS cluster</h3>
 <h3>✅ Prerequisites</h3>
 
 eksctl installed – Install Guide
