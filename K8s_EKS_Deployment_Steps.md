@@ -124,3 +124,32 @@ nodeGroups:
       environment: dev
 
 ```
+<h3>✅ Prerequisites</h3>
+
+eksctl installed – Install Guide
+
+kubectl installed
+
+AWS CLI configured with appropriate permissions
+
+IAM role with EKS permissions
+
+Region selected (e.g., us-east-1)
+
+🛠️ Step-by-Step: Create EKS Cluster with Fargate
+<h3>✅ 1. Create a simple config file for eksctl (e.g. fargate-cluster.yaml)</h3>
+
+```apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: fargate-demo-cluster
+  region: us-east-1
+
+fargateProfiles:
+  - name: fp-default
+    selectors:
+      - namespace: default
+      - namespace: kube-system
+```
+
