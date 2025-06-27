@@ -45,8 +45,8 @@ Before we begin, ensure you have the following prerequisites in place:
 
 <h1>EKS Cluster Setup</h1>
 Now we will set up an EKS Kubernetes cluster to host the application. This includes creating the cluster itself and then configuring necessary add-ons such as IAM OIDC provider, the AWS Load Balancer Controller (for ingress), and the EBS CSI driver (for persistent storage). The following steps assume you’re operating in the us-east-1 region (North Virginia); you can change the region and names as needed.
-```
-apiVersion: eksctl.io/v1alpha5
+
+```apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
@@ -79,5 +79,13 @@ nodeGroups:
         albIngress: true
     tags:
       node-type: "general"
-      env: "dev"```
+      env: "dev"
+## Java Example
+
+```java
+public class Hello {
+    public static void main(String[] args) {
+        System.out.println("Hello!");
+    }
+}
 
