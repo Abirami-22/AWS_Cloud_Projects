@@ -112,4 +112,12 @@ Run critical workloads on EC2 for performance/customization.
 
 Use Fargate for bursty or small workloads that need minimal ops.
 
+| Feature          | EC2 Worker Nodes         | Fargate                     |
+| ---------------- | ------------------------ | --------------------------- |
+| Control          | Full (custom AMIs, SSH)  | Minimal (fully managed)     |
+| Scaling          | Manual / Auto Scaling    | Automatic                   |
+| Pricing          | Per EC2 instance         | Per vCPU + memory used      |
+| Setup Complexity | Higher                   | Lower                       |
+| Use Case         | Complex, heavy workloads | Simple, on-demand workloads |
+
 
