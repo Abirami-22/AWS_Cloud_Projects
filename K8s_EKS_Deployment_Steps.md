@@ -153,3 +153,35 @@ fargateProfiles:
       - namespace: kube-system
 ```
 
+Once done, eksctl will update your kubeconfig (usually ~/.kube/config) so that kubectl is pointed at the new cluster. You can verify the cluster by running a simple command, for example:
+
+```kubectl get nodes```
+
+to see if the nodes are up (this requires kubectl configured and in the same environment where eksctl ran).
+
+<h1>2. Enable IAM OIDC Provider for the Cluster</h1>
+
+Amazon EKS uses an OpenID Connect (OIDC) provider to allow Kubernetes service accounts to assume IAM roles. This is needed for certain cluster add-ons (like the ALB controller and CSI driver) to interact with AWS resources securely using IAM. We will ensure the IAM OIDC provider is associated with our cluster.
+
+**Check and Associate OIDC:** Use the AWS CLI and eksctl to set up the provider if not already present:
+
+```export cluster_name="demo-cluster-three-tier-1"
+# Get the OIDC issuer ID for the cluster
+oidc_id=$(aws eks describe-cluster --name $cluster_name --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f5)
+# Check if OIDC provider is already associated
+aws iam list-open-id-connect-providers | grep "$oidc_id" || echo "OIDC provider not found"
+```
+
+If the above check returns nothing (no OIDC provider found), associate one with the cluster by running:
+
+```eksctl utils associate-iam-oidc-provider --cluster "$cluster_name" --approve```
+
+This command configures the IAM OIDC provider for your EKS cluster. With OIDC in place, Kubernetes service accounts can later be linked to IAM roles via IAM service account annotations – a requirement for the AWS Load Balancer Controller and EBS CSI driver.
+
+<h1>3. Install the AWS Load Balancer Controller (ALB Ingress Controller)</h1>
+
+To expose the microservices to the internet, we’ll use an Application Load Balancer (ALB) Ingress Controller for AWS EKS. This controller will watch Ingress resources in the cluster and create/manage an AWS ALB accordingly, allowing external traffic to reach our services. The ALB controller needs specific IAM permissions and will run as a deployment in our cluster. We’ll set it up step by step:
+
+a. Create IAM Policy for ALB Controller: AWS provides a pre-defined IAM policy JSON for the ALB controller. Download this policy document and create an IAM policy from it:
+
+
