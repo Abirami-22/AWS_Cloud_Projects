@@ -87,4 +87,29 @@ nodeGroups:
 ```
 Amazon EKS (Elastic Kubernetes Service) can be set up using either:
 
+<h6>🖥️ 1. EC2-based Worker Nodes</h6>
+These are regular EC2 instances that serve as Kubernetes worker nodes.
+
+Use case: When you need more control over the compute environment (e.g., GPU instances, custom AMIs, SSH access, etc.).
+
+Setup tools: eksctl, CloudFormation, or console.
+
+Cost: You pay for EC2 instances separately (instance hours + storage).
+
+<h6>☁️ 2. AWS Fargate (Serverless)</h6>
+Fargate runs your pods without provisioning or managing EC2 nodes.
+
+Use case: When you want fully managed compute, scale automatically, and don't want to manage EC2 instances.
+
+No need to patch or manage worker nodes.
+
+Cost: You pay per vCPU and memory used by your pods.
+
+<h6>🔁 Hybrid Option (EC2 + Fargate)</h6>
+You can even mix both EC2 and Fargate profiles in the same cluster:
+
+Run critical workloads on EC2 for performance/customization.
+
+Use Fargate for bursty or small workloads that need minimal ops.
+
 
