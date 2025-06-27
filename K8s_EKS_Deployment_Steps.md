@@ -44,6 +44,45 @@ Before we begin, ensure you have the following prerequisites in place:
 **Docker (optional):** If you want to test locally or build images, Docker is useful. (For this deployment, you won’t need to build images manually because pre-built images are available on Docker Hub.)
 
 <h1>EKS Cluster Setup</h1>
+
+Amazon EKS (Elastic Kubernetes Service) can be set up using either:
+
+<h6>🖥️ 1. EC2-based Worker Nodes</h6>
+These are regular EC2 instances that serve as Kubernetes worker nodes.
+
+Use case: When you need more control over the compute environment (e.g., GPU instances, custom AMIs, SSH access, etc.).
+
+Setup tools: eksctl, CloudFormation, or console.
+
+Cost: You pay for EC2 instances separately (instance hours + storage).
+
+<h6>☁️ 2. AWS Fargate (Serverless)</h6>
+Fargate runs your pods without provisioning or managing EC2 nodes.
+
+Use case: When you want fully managed compute, scale automatically, and don't want to manage EC2 instances.
+
+No need to patch or manage worker nodes.
+
+Cost: You pay per vCPU and memory used by your pods.
+
+<h6>🔁 Hybrid Option (EC2 + Fargate)</h6>
+You can even mix both EC2 and Fargate profiles in the same cluster:
+
+Run critical workloads on EC2 for performance/customization.
+
+Use Fargate for bursty or small workloads that need minimal ops.
+
+| Feature          | EC2 Worker Nodes         | Fargate                     |
+| ---------------- | ------------------------ | --------------------------- |
+| Control          | Full (custom AMIs, SSH)  | Minimal (fully managed)     |
+| Scaling          | Manual / Auto Scaling    | Automatic                   |
+| Pricing          | Per EC2 instance         | Per vCPU + memory used      |
+| Setup Complexity | Higher                   | Lower                       |
+| Use Case         | Complex, heavy workloads | Simple, on-demand workloads |
+
+
+<h3>🖥️ 1. EC2-based Worker Nodes</h3>
+
 Now we will set up an EKS Kubernetes cluster to host the application. This includes creating the cluster itself and then configuring necessary add-ons such as IAM OIDC provider, the AWS Load Balancer Controller (for ingress), and the EBS CSI driver (for persistent storage). The following steps assume you’re operating in the us-east-1 region (North Virginia); you can change the region and names as needed.
 
 ```apiVersion: eksctl.io/v1alpha5
@@ -85,39 +124,3 @@ nodeGroups:
       environment: dev
 
 ```
-Amazon EKS (Elastic Kubernetes Service) can be set up using either:
-
-<h6>🖥️ 1. EC2-based Worker Nodes</h6>
-These are regular EC2 instances that serve as Kubernetes worker nodes.
-
-Use case: When you need more control over the compute environment (e.g., GPU instances, custom AMIs, SSH access, etc.).
-
-Setup tools: eksctl, CloudFormation, or console.
-
-Cost: You pay for EC2 instances separately (instance hours + storage).
-
-<h6>☁️ 2. AWS Fargate (Serverless)</h6>
-Fargate runs your pods without provisioning or managing EC2 nodes.
-
-Use case: When you want fully managed compute, scale automatically, and don't want to manage EC2 instances.
-
-No need to patch or manage worker nodes.
-
-Cost: You pay per vCPU and memory used by your pods.
-
-<h6>🔁 Hybrid Option (EC2 + Fargate)</h6>
-You can even mix both EC2 and Fargate profiles in the same cluster:
-
-Run critical workloads on EC2 for performance/customization.
-
-Use Fargate for bursty or small workloads that need minimal ops.
-
-| Feature          | EC2 Worker Nodes         | Fargate                     |
-| ---------------- | ------------------------ | --------------------------- |
-| Control          | Full (custom AMIs, SSH)  | Minimal (fully managed)     |
-| Scaling          | Manual / Auto Scaling    | Automatic                   |
-| Pricing          | Per EC2 instance         | Per vCPU + memory used      |
-| Setup Complexity | Higher                   | Lower                       |
-| Use Case         | Complex, heavy workloads | Simple, on-demand workloads |
-
-
